@@ -2,7 +2,7 @@
 
 mkdir -p graphs  
 THREADS="1 2 4 8"
-POINTS="10000 50000 100000 500000"
+POINTS="50000 100000 500000 1000000 5000000"
 OUT=results.csv
 
 echo "points,threads,time" > $OUT
