@@ -1,105 +1,41 @@
 #!/bin/bash
-
 set -e
 
-# -------------------------------
-# Параметры эксперимента
-# -------------------------------
-EXEC=./a.out
 SRC=nbody_omp.c
+EXEC=./a.out
 INPUT=input.txt
-TEND=0.01
-#RUNS=5
+TEND=100
+RUNS=3
 
+N_LIST="1000 2000 5000 10000"
 THREADS_LIST="1 2 4 8"
 
-RESULTS_DIR=results
-PLOTS_DIR=$RESULTS_DIR/plots
+RESULTS=results_multi
+PLOTS=$RESULTS/plots
 
-mkdir -p $PLOTS_DIR
+mkdir -p $PLOTS
 
-# -------------------------------
-# Компиляция
-# -------------------------------
-echo "Компиляция..."
-#gcc -O3 -fopenmp $SRC -o nbody -lm
+echo "N,threads,time" > $RESULTS/raw_times.csv
+
+# компиляция
 clang -Xpreprocessor -fopenmp \
   -I$(brew --prefix libomp)/include \
   -L$(brew --prefix libomp)/lib -lomp \
-  nbody_omp.c
+  $SRC
 
-# -------------------------------
-# Замеры времени
-# -------------------------------
-echo "threads,time" > $RESULTS_DIR/times.csv
+for N in $N_LIST; do
+    echo "=============================="
+    echo "N = $N"
 
-for t in $THREADS_LIST; do
-    echo "Запуск с $t потоками"
-    export OMP_NUM_THREADS=$t
+    for P in $THREADS_LIST; do
+        echo "  Потоки = $P"
 
-    TIME=$($EXEC $t $TEND $INPUT \
-           | grep "Среднее время" | awk '{print $4}')
+        python3 genInput.py $N $INPUT
+        export OMP_NUM_THREADS=$P
 
-    echo "$t,$TIME" >> $RESULTS_DIR/times.csv
+        TIME=$($EXEC $P $TEND $INPUT \
+               | grep "Среднее время" | awk '{print $4}')
+
+        echo "$N,$P,$TIME" >> $RESULTS/raw_times.csv
+    done
 done
-
-# -------------------------------
-# Постобработка + графики
-# -------------------------------
-python3 << EOF
-import csv
-import matplotlib.pyplot as plt
-
-threads = []
-times = []
-
-with open("$RESULTS_DIR/times.csv") as f:
-    reader = csv.DictReader(f)
-    for row in reader:
-        threads.append(int(row["threads"]))
-        times.append(float(row["time"]))
-
-t1 = times[0]
-speedup = [t1 / t for t in times]
-efficiency = [s / p for s, p in zip(speedup, threads)]
-
-# --- сохраняем таблицы ---
-with open("$RESULTS_DIR/speedup.csv", "w") as f:
-    f.write("threads,speedup\n")
-    for p, s in zip(threads, speedup):
-        f.write(f"{p},{s}\n")
-
-with open("$RESULTS_DIR/efficiency.csv", "w") as f:
-    f.write("threads,efficiency\n")
-    for p, e in zip(threads, efficiency):
-        f.write(f"{p},{e}\n")
-
-# --- график времени ---
-plt.figure()
-plt.plot(threads, times, marker="o")
-plt.xlabel("Число потоков")
-plt.ylabel("Время, с")
-plt.title("Время выполнения")
-plt.grid()
-plt.savefig("$PLOTS_DIR/time.png")
-
-# --- график ускорения ---
-plt.figure()
-plt.plot(threads, speedup, marker="o")
-plt.xlabel("Число потоков")
-plt.ylabel("Ускорение")
-plt.title("Ускорение")
-plt.grid()
-plt.savefig("$PLOTS_DIR/speedup.png")
-
-# --- график эффективности ---
-plt.figure()
-plt.plot(threads, efficiency, marker="o")
-plt.xlabel("Число потоков")
-plt.ylabel("Эффективность")
-plt.title("Эффективность")
-plt.grid()
-plt.savefig("$PLOTS_DIR/efficiency.png")
-EOF
-
-echo "Готово. Графики лежат в $PLOTS_DIR"

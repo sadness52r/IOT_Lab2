@@ -5,6 +5,11 @@ THREADS="1 2 4 8"
 POINTS="50000 100000 500000 1000000 5000000"
 OUT=results.csv
 
+clang -Xpreprocessor -fopenmp \
+  -I$(brew --prefix libomp)/include \
+  -L$(brew --prefix libomp)/lib -lomp \
+  main.c
+
 echo "points,threads,time" > $OUT
 
 for p in $POINTS
