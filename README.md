@@ -44,7 +44,7 @@
 
 ![alt text](task2/results_multi/plots/time.png)
 ![alt text](task2/results_multi/plots/speedup.png)
-![alt text](task2/results_multi/plots/efficienty.png)
+![alt text](task2/results_multi/plots/efficiency.png)
 
 ## Task 3. Реализация rwlock и rdlock, wrlock блокировки чтения-записи
 
