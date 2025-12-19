@@ -76,6 +76,8 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
+    omp_set_num_threads(nthreads);
+
     const int npoints = atoi(argv[2]);
     if (npoints <= 0) {
         fprintf(stderr, "Error: npoints must be a positive integer.\n");
