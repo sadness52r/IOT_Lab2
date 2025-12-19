@@ -1,0 +1,5 @@
+"Test" "Time_ms"
+"read-heavy (custom rwlock)" 193
+"read-heavy (pthread rwlock)" 147
+"write-heavy (custom rwlock)" 6339
+"write-heavy (pthread rwlock)" 4895
